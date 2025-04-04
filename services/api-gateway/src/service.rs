@@ -73,8 +73,20 @@ mod tests {
 
         let response = handle_request(request).await.unwrap();
 
-        assert_eq!(&response.status(), &StatusCode::OK);
+        assert_eq!(response.status(), StatusCode::OK);
         assert_eq!(response.body().to_owned().frame().await.unwrap().unwrap().into_data().unwrap(), r#"{"status":"ok"}"#);
     }
 
+    #[tokio::test]
+    async fn test_unknown_endpoint() {
+        let request = Request::builder()
+            .method(Method::GET)
+            .uri("/unknown")
+            .body(MockBody::new_empty())
+            .unwrap();
+
+        let response = handle_request(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        assert_eq!(response.body().to_owned().frame().await.unwrap().unwrap().into_data().unwrap(), r#"{"error":"Not Found"}"#);
+    }
 }

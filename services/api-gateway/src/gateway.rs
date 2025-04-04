@@ -37,3 +37,35 @@ impl Gateway {
     }
     
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::configuration::GatewaySettings;
+    use super::*;
+    use tokio::net::TcpListener;
+
+    #[tokio::test]
+    async fn test_gateway_accepts_connections() {
+        let config = Settings {
+            gateway: GatewaySettings {
+                host: "127.0.0.1".to_string(),
+                port: 0,
+            }
+        };
+        
+        let listener = TcpListener::bind(format!(
+            "{}:{}", 
+            config.gateway.host, config.gateway.port))
+            .await.unwrap();
+        let addr = listener.local_addr().unwrap();
+    
+        let gateway = Gateway::new(config);
+        
+        let _ = tokio::spawn(async move {
+            gateway.run(listener).await.unwrap();
+        });
+        
+        let response = reqwest::get(format!("http://{}:{}/health", addr.ip(), addr.port())).await.unwrap();
+        assert_eq!(response.status().as_u16(), 200);
+    }
+}
