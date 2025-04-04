@@ -57,3 +57,23 @@ impl Environment {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_environment_try_from() {
+        assert!(matches!(Environment::try_from("local".to_string()), Ok(Environment::Local)));
+        assert!(matches!(Environment::try_from("production".to_string()), Ok(Environment::Production)));
+        assert!(matches!(Environment::try_from("prod".to_string()), Ok(Environment::Production)));
+        
+        assert!(Environment::try_from("invalid".to_string()).is_err());
+    }
+    
+    #[test]
+    fn test_environment_as_str() {
+        assert_eq!(Environment::Local.as_str(), "local");
+        assert_eq!(Environment::Production.as_str(), "production");
+    }
+}
