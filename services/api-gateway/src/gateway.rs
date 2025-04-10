@@ -2,7 +2,7 @@ use hyper::{server::conn::http1, service::service_fn};
 use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
 
-use crate::{configuration::Settings, handle_request};
+use crate::{Settings, handle_request};
 
 
 pub struct Gateway {

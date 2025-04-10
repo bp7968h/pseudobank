@@ -6,7 +6,7 @@ use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn error::Error>> {
-    let configuration = get_settings().unwrap();
+    let configuration = get_settings().expect("Failed to load configuration settings");
     let listening_addr = format!(
         "{}:{}",
         configuration.gateway.host, configuration.gateway.port
