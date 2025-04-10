@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::{Arc, RwLock}, time::Instant};
+use std::{collections::HashMap, sync::{Arc, RwLock}, time::{Duration, Instant}};
 
 use hyper::Method;
 
@@ -36,6 +36,16 @@ impl Registry {
     pub fn new() -> Self {
         Registry { 
             services: Arc::new(RwLock::new(HashMap::new())), 
+        }
+    }
+
+    pub fn check_services_health(&self, timeout: Duration) {
+        if let Ok(mut services) = self.services.write() {
+            for (_, instance) in services.iter_mut() {
+                if instance.last_heartbeat.elapsed() > timeout {
+                    instance.status = ServiceStatus::Down;
+                }
+            }
         }
     }
 }

@@ -1,34 +1,46 @@
+use std::{sync::Arc, time::Duration};
+
 use hyper::{server::conn::http1, service::service_fn};
 use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
 
-use crate::{Settings, handle_request};
+use crate::{Router, Settings};
 
 
 pub struct Gateway {
     config: Settings,
+    router: Arc<Router>,
 }
 
 impl Gateway {
     pub fn new(config: Settings) -> Self {
-        Gateway { config }
+        let health_check_interval = Duration::from_secs(30);
+        let router = Arc::new(Router::new(health_check_interval));
+        
+        Router::start_health_check(Arc::clone(&router));
+
+        Gateway { config, router }
     }
 
     pub async fn run(&self, listener: TcpListener) -> Result<(), Box<dyn std::error::Error>> {
         println!(
-            "Server running on `http://{}:{}`",
+            "API Gateway running on `http://{}:{}`",
             self.config.gateway.host, self.config.gateway.port
         );
 
         loop {
             let (stream, _) = listener.accept().await?;
             let io = TokioIo::new(stream);
+            let router = Arc::clone(&self.router);
     
             tokio::task::spawn(async move {
                 if let Err(e) = http1::Builder::new()
                     .preserve_header_case(true)
                     .title_case_headers(true)
-                    .serve_connection(io, service_fn(handle_request))
+                    .serve_connection(io, service_fn(move |req| {
+                        let router = Arc::clone(&router);
+                        async move { router.handle_request(req).await }
+                    }))
                     .await {
                         println!("Error serving connection: {:?}", e);
                     }

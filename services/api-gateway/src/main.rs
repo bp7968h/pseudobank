@@ -13,7 +13,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
     );
 
     let listener = TcpListener::bind(&listening_addr).await?;
+    
     let gateway = Gateway::new(configuration);
-
     gateway.run(listener).await
 }
